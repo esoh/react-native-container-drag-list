@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "outDir": "./lib",
+    "target": "es6",
+    "module": "es6",
+    "declaration": true,
+    "removeComments": true,
+    "allowUnreachableCode": false,
+    "esModuleInterop": true,
+    "allowUnusedLabels": false,
+    "jsx": "react-native",
+    "skipLibCheck": true
+  },
+  "include": [
+    "src"
+  ]
+}
