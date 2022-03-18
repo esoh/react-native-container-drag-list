@@ -42,3 +42,5 @@ buck-out/
 *.keystore
 
 lib/
+
+vendor
