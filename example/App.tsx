@@ -1,7 +1,7 @@
 // This is an example test file.
 /* eslint-disable */
 import React from 'react';
-import {View, Text, StyleSheet, Button} from 'react-native';
+import {View, Text, StyleSheet, Button, LayoutChangeEvent} from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -55,8 +55,12 @@ const sampleData = [
 ];
 
 function Item({item, containerItem, dragProps, dragState, onChangeHeightVal}) {
+  if (item.id === 0) {
+    console.log('render0');
+  }
+
   const isAnimating = useSharedValue(false);
-  const baseHeight = useSharedValue(null);
+  const baseHeight = useSharedValue<number | null>(null);
   const progress = useDerivedValue(() => {
     if (dragState?.isDragging || dragState?.isAnimating?.value) {
       isAnimating.value = true;
@@ -72,7 +76,7 @@ function Item({item, containerItem, dragProps, dragState, onChangeHeightVal}) {
     nativeEvent: {
       layout: {height},
     },
-  }) => {
+  }: LayoutChangeEvent) => {
     if (!isAnimating.value) collapsibleHeightVal.value = height;
   };
   const style = useAnimatedStyle(() => {
@@ -92,7 +96,7 @@ function Item({item, containerItem, dragProps, dragState, onChangeHeightVal}) {
     nativeEvent: {
       layout: {height},
     },
-  }) => {
+  }: LayoutChangeEvent) => {
     baseHeight.value = height;
   };
 

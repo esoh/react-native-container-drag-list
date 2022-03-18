@@ -26,9 +26,9 @@ function LongPressDragHandler({ dragProps = {}, children }: { dragProps: any, ch
       if (y0.value === null) return;
       if (onDrag) onDrag(e.absoluteY - y0.value, e.absoluteY);
     })
-    .onEnd((e) => {
+    .onTouchesUp(() => {
       if (y0.value !== null) {
-        runOnJS(onDragEndInternal)(e.absoluteY);
+        runOnJS(onDragEndInternal)(undefined);
         y0.value = null;
       }
       isPanning.value = true;
