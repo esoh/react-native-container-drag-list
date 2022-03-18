@@ -1,9 +1,9 @@
-import React from 'react';
-import { State, LongPressGestureHandler } from 'react-native-gesture-handler';
+import React, {useRef} from 'react';
+import { State, LongPressGestureHandler, PanGestureHandler } from 'react-native-gesture-handler';
 import Animated, { useSharedValue, useAnimatedGestureHandler } from 'react-native-reanimated';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 
-function LongPressDragHandler({ dragProps = {}, children }) {
+function LongPressDragHandler({ dragProps = {}, children }: { dragProps: any, children: any }) {
   const { onDrag, onDragStart, onDragEnd } = dragProps;
 
   const y0 = useSharedValue(null);
@@ -16,6 +16,8 @@ function LongPressDragHandler({ dragProps = {}, children }) {
       y0.value = null;
     },
   });
+
+  const panRef = useRef<PanGestureHandler>(null);
 
   return (
     <LongPressGestureHandler
@@ -31,6 +33,7 @@ function LongPressDragHandler({ dragProps = {}, children }) {
           y0.value = null;
         }
       }}
+      // @ts-ignore
       onGestureEvent={eventHandler}
     >
       <Animated.View>

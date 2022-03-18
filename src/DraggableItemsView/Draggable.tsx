@@ -44,7 +44,7 @@ function Draggable({
   dragItemTranslateY,
   dragScreenOffset,
   dragStateVal,
-}) {
+}: any) {
   const isAnimating = useSharedValue(false);
 
   const dragStateProp = {
@@ -136,7 +136,7 @@ function Draggable({
     opacity: 0,
   }));
 
-  const [position, setPosition] = useState({});
+  const [position, setPosition] = useState<any>({});
   useDerivedValue(() => {
     let pos;
     if (isContainer) {
