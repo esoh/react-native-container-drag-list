@@ -60,7 +60,7 @@ function ReorderDragScrollView({
     setDragState(p => ({ ...p, isDragging: false }));
   };
 
-  const scrollView = useAnimatedRef();
+  const scrollView = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useSharedValue(0);
   const contentHeight = useSharedValue(0);
   const scrollAnim = useSharedValue(0);
@@ -98,8 +98,8 @@ function ReorderDragScrollView({
     },
   });
 
-  const autoHeight = useSharedValue();
-  const msmts = useSharedValue();
+  const autoHeight = useSharedValue<undefined | number>(undefined);
+  const msmts = useSharedValue(undefined);
 
   const measuredStyle = useAnimatedStyle(() => {
     if (autoHeight.value === undefined) return {};
@@ -176,7 +176,6 @@ function ReorderDragScrollView({
         <MeasureItemsView
           data={data}
           metaProps={metaProps}
-          measurements={msmts}
           onChangeMeasurements={m => { msmts.value = m; }}
           onChangeHeight={h => { autoHeight.value = h; }}
           dragState={dragState}
