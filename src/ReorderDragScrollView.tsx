@@ -31,6 +31,7 @@ import { View } from 'react-native';
 import MeasureItemsView from './MeasureItemsView';
 import DraggableItemsView from './DraggableItemsView';
 import { DIRECTION } from './constants';
+import {DragState, Measurements} from './types';
 
 const { UP, DOWN } = DIRECTION;
 
@@ -51,13 +52,13 @@ function ReorderDragScrollView({
   HeaderComponent,
   onScroll: onScrollProp, // worklet fn
 }) {
-  const [dragState, setDragState] = useState({
+  const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
     isContainer: null,
     id: null,
   });
   const onDragEnd = () => {
-    setDragState(p => ({ ...p, isDragging: false }));
+    setDragState((p: DragState) => ({ ...p, isDragging: false }));
   };
 
   const scrollView = useAnimatedRef<Animated.ScrollView>();
@@ -68,7 +69,7 @@ function ReorderDragScrollView({
     if (!dragState.isDragging) cancelAnimation(scrollAnim);
   }, [dragState.isDragging]);
 
-  const scrollIfNeeded = (y, lastGestureDirection) => {
+  const scrollIfNeeded = (y: number, lastGestureDirection: typeof DIRECTION.UP | typeof DIRECTION.DOWN) => {
     'worklet';
 
     const { height: scrollViewHeight, pageY: scrollViewY } = measure(scrollView);
@@ -98,7 +99,7 @@ function ReorderDragScrollView({
     },
   });
 
-  const msmts = useSharedValue(undefined);
+  const msmts = useSharedValue<Measurements>(undefined);
 
   const providedItemHeightsVal = useSharedValue([]);
 
@@ -168,9 +169,11 @@ function ReorderDragScrollView({
         <MeasureItemsView
           data={data}
           metaProps={metaProps}
-          onChangeMeasurements={m => { msmts.value = m; }}
+          onChangeMeasurements={m => {
+            console.log(m);
+            msmts.value = m;
+          }}
           dragState={dragState}
-          providedItemHeightsVal={providedItemHeightsVal}
         />
       </View>
       <View style={{ position: 'relative', zIndex: -2 }}>

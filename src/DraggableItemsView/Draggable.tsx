@@ -169,9 +169,6 @@ function Draggable({
             item: child,
             containerItem,
             dragState: dragStateProp,
-            onChangeHeightVal: () => {
-              'worklet';
-            },
             position: {
               rootIndex: position.rootIndex,
               childIndex,
@@ -276,9 +273,6 @@ function Draggable({
           onDrag: handleDrag,
         },
         dragState: dragStateProp,
-        onChangeHeightVal: () => {
-          'worklet';
-        },
         position,
       })}
     </Animated.View>

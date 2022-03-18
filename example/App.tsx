@@ -54,13 +54,12 @@ const sampleData = [
   },
 ];
 
-function Item({item, containerItem, dragProps, dragState, onChangeHeightVal}) {
+function Item({item, containerItem, dragProps, dragState}) {
   if (item.id === 0) {
     console.log('render0');
   }
 
   const isAnimating = useSharedValue(false);
-  const baseHeight = useSharedValue<number | null>(null);
   const progress = useDerivedValue(() => {
     if (dragState?.isDragging || dragState?.isAnimating?.value) {
       isAnimating.value = true;
@@ -81,8 +80,6 @@ function Item({item, containerItem, dragProps, dragState, onChangeHeightVal}) {
   };
   const style = useAnimatedStyle(() => {
     const collapsibleHeight = progress.value * collapsibleHeightVal.value;
-    if (baseHeight.value !== null)
-      onChangeHeightVal(collapsibleHeight + baseHeight.value);
 
     if (collapsibleHeightVal.value === 0) return {};
 
@@ -92,18 +89,10 @@ function Item({item, containerItem, dragProps, dragState, onChangeHeightVal}) {
     };
   }, [dragState?.isDragging]);
 
-  const handleTopLayout = ({
-    nativeEvent: {
-      layout: {height},
-    },
-  }: LayoutChangeEvent) => {
-    baseHeight.value = height;
-  };
-
   return (
     <View>
       <LongPressDragHandler dragProps={dragProps}>
-        <View style={styles.item} onLayout={handleTopLayout}>
+        <View style={styles.item}>
           <Text
             style={[
               containerItem ? {paddingLeft: 20} : undefined,
