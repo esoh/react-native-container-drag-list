@@ -31,10 +31,6 @@ const removeDeleted = (measurementsInput, data, {
   return { containerItems, items };
 };
 
-// TODO - might wanna add dragState so that height and measurements are always
-// up to date, such that if a dragState changes measurements, it will take
-// effect on the MeasureItemsView items.
-
 function MeasureItemsView({
   data,
   metaProps: {
@@ -45,7 +41,6 @@ function MeasureItemsView({
     containerKeyExtractor,
     keyExtractor,
   },
-  onChangeHeight,
   onChangeMeasurements,
   dragState,
   providedItemHeightsVal,
@@ -207,12 +202,8 @@ function MeasureItemsView({
 
   return (
     <View
-      onLayout={({ nativeEvent: { layout: { height } } }) => {
-        onChangeHeight(height);
-      }}
       style={{
         opacity: 0,
-        position: 'absolute',
         overflow: 'hidden',
         zIndex: -3,
       }}

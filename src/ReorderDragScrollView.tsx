@@ -98,13 +98,7 @@ function ReorderDragScrollView({
     },
   });
 
-  const autoHeight = useSharedValue<undefined | number>(undefined);
   const msmts = useSharedValue(undefined);
-
-  const measuredStyle = useAnimatedStyle(() => {
-    if (autoHeight.value === undefined) return {};
-    return { height: withTiming(autoHeight.value) };
-  });
 
   const providedItemHeightsVal = useSharedValue([]);
 
@@ -157,27 +151,24 @@ function ReorderDragScrollView({
           contentViewY.value = y;
         }}
       >
-        <Animated.View style={measuredStyle}>
-          <DraggableItemsView
-            data={data}
-            metaProps={metaProps}
-            measurements={msmts}
-            providedItemHeightsVal={providedItemHeightsVal}
-            scrollIfNeeded={scrollIfNeeded}
-            scrollOffset={scrollOffset}
-            onDragEnd={onDragEnd}
-            onDragStart={onDragStart}
-            onChange={onChange}
-            dragState={dragState}
-            scrollViewScreenY={scrollViewScreenY}
-            contentViewY={contentViewY}
-          />
-        </Animated.View>
+        <DraggableItemsView
+          data={data}
+          metaProps={metaProps}
+          measurements={msmts}
+          providedItemHeightsVal={providedItemHeightsVal}
+          scrollIfNeeded={scrollIfNeeded}
+          scrollOffset={scrollOffset}
+          onDragEnd={onDragEnd}
+          onDragStart={onDragStart}
+          onChange={onChange}
+          dragState={dragState}
+          scrollViewScreenY={scrollViewScreenY}
+          contentViewY={contentViewY}
+        />
         <MeasureItemsView
           data={data}
           metaProps={metaProps}
           onChangeMeasurements={m => { msmts.value = m; }}
-          onChangeHeight={h => { autoHeight.value = h; }}
           dragState={dragState}
           providedItemHeightsVal={providedItemHeightsVal}
         />

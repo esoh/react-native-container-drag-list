@@ -276,7 +276,9 @@ function Draggable({
           onDrag: handleDrag,
         },
         dragState: dragStateProp,
-        onChangeHeightVal: () => { 'worklet'; },
+        onChangeHeightVal: () => {
+          'worklet';
+        },
         position,
       })}
     </Animated.View>
