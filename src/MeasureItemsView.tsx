@@ -198,9 +198,7 @@ function MeasureItemsView({
             item,
             dragState,
             onChangeHeightVal: handleChangeItemHeight(id),
-            position: {
-              value: { rootIndex },
-            },
+            position: { rootIndex },
           })}
         </View>
       );
