@@ -14,7 +14,7 @@ import ReorderDragScrollView, {
 
 const styles = StyleSheet.create({
   item: {
-    backgroundColor: 'blue',
+    backgroundColor: 'gray',
     textAlign: 'center',
     flex: 1,
     alignItems: 'center',
@@ -55,10 +55,6 @@ const sampleData = [
 ];
 
 function Item({item, containerItem, dragProps, dragState}) {
-  if (item.id === 0) {
-    console.log('render0');
-  }
-
   const isAnimating = useSharedValue(false);
   const progress = useDerivedValue(() => {
     if (dragState?.isDragging || dragState?.isAnimating?.value) {
@@ -99,13 +95,15 @@ function Item({item, containerItem, dragProps, dragState}) {
               styles.draggable,
             ]}
           >
-            {item.value}
+            {`item ${item.value}`}
           </Text>
         </View>
       </LongPressDragHandler>
-      <Animated.View style={style}>
+      <Animated.View style={[style, {backgroundColor: 'lightgray'}]}>
         <View onLayout={handleLayout}>
-          <Text style={styles.collapsibleText}>collapsible</Text>
+          <Text
+            style={styles.collapsibleText}
+          >{`item ${item.value} - collapsible body`}</Text>
         </View>
       </Animated.View>
     </View>
@@ -120,7 +118,7 @@ function App() {
     <>
       <LongPressDragHandler dragProps={dragProps}>
         <View style={styles.topContainer}>
-          <Text>{containerItem.id}</Text>
+          <Text>{`${containerItem.id} - this is a container`}</Text>
         </View>
       </LongPressDragHandler>
       {children}
