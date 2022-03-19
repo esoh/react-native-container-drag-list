@@ -1,5 +1,4 @@
 // This is an example test file.
-/* eslint-disable */
 import React from 'react';
 import {View, Text, StyleSheet, Button, LayoutChangeEvent} from 'react-native';
 import Animated, {
@@ -54,7 +53,7 @@ const sampleData = [
   },
 ];
 
-function Item({item, containerItem, dragProps, dragState}) {
+function Item({item, dragProps, dragState}) {
   const isAnimating = useSharedValue(false);
   const progress = useDerivedValue(() => {
     if (dragState?.isDragging || dragState?.isAnimating?.value) {
@@ -72,12 +71,16 @@ function Item({item, containerItem, dragProps, dragState}) {
       layout: {height},
     },
   }: LayoutChangeEvent) => {
-    if (!isAnimating.value) collapsibleHeightVal.value = height;
+    if (!isAnimating.value) {
+      collapsibleHeightVal.value = height;
+    }
   };
   const style = useAnimatedStyle(() => {
     const collapsibleHeight = progress.value * collapsibleHeightVal.value;
 
-    if (collapsibleHeightVal.value === 0) return {};
+    if (collapsibleHeightVal.value === 0) {
+      return {};
+    }
 
     return {
       height: collapsibleHeight,
@@ -89,14 +92,7 @@ function Item({item, containerItem, dragProps, dragState}) {
     <View>
       <LongPressDragHandler dragProps={dragProps}>
         <View style={styles.item}>
-          <Text
-            style={[
-              containerItem ? {paddingLeft: 20} : undefined,
-              styles.draggable,
-            ]}
-          >
-            {`item ${item.value}`}
-          </Text>
+          <Text style={styles.draggable}>{`item ${item.value}`}</Text>
         </View>
       </LongPressDragHandler>
       <Animated.View style={[style, {backgroundColor: 'lightgray'}]}>
