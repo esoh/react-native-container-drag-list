@@ -32,17 +32,25 @@ export type Position = {
   childIndex?: number; // if this is an item in a container, this will be the index of the index within the container
 };
 
+export type DragProps = {
+  onDrag: (yDelta: number, absoluteY: number) => void;
+  onDragStart: (absoluteY: number) => void;
+  onDragEnd: (absoluteY: number) => void;
+} | undefined;
+
 export type MetaProps = {
   renderItem: (info: {
     item: Item;
     dragState: DragState;
     position: Position;
+    dragProps: DragProps;
   }) => React.ReactNode;
   keyExtractor: (item: Item) => string;
   renderContainer: (info: {
     children: Array<React.ReactNode>;
     containerItem: Container;
     dragState: DragState;
+    dragProps: DragProps;
   }) => React.ReactNode;
   containerKeyExtractor: (c: Container) => string;
   isItemContainer: (i: Item | Container) => boolean;

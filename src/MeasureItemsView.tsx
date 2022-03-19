@@ -141,6 +141,7 @@ function MeasureItemsView({
             <View key={id} onLayout={handleOnLayout(id)}>
               {renderItem({
                 item: child,
+                dragProps: undefined,
                 dragState,
                 position: { rootIndex, childIndex },
               })}
@@ -171,6 +172,7 @@ function MeasureItemsView({
             {renderContainer({
               children,
               containerItem: item,
+              dragProps: undefined,
               dragState,
             })}
           </View>
@@ -183,6 +185,7 @@ function MeasureItemsView({
         <View key={id} onLayout={handleOnLayout(id)}>
           {renderItem({
             item,
+            dragProps: undefined,
             dragState,
             position: { rootIndex },
           })}

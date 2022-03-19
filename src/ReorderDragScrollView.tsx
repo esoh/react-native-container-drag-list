@@ -21,7 +21,6 @@ import Animated, {
   withTiming,
   useAnimatedRef,
   useAnimatedScrollHandler,
-  useAnimatedStyle,
   scrollTo,
   measure,
   withRepeat,
@@ -31,7 +30,7 @@ import { View } from 'react-native';
 import MeasureItemsView from './MeasureItemsView';
 import DraggableItemsView from './DraggableItemsView';
 import { DIRECTION } from './constants';
-import {DragState, Measurements} from './types';
+import {DragState, Measurements, MetaProps, Data} from './types';
 
 const { UP, DOWN } = DIRECTION;
 
@@ -39,18 +38,42 @@ const DRAG_THRESHOLD = 100;
 const SCROLL_AMOUNT = 5;
 const REFRESH_MS = 3;
 
+const idExtractor = item => {
+  'worklet';
+
+  return item.id;
+};
+
+const noContainers = () => {
+  'worklet';
+
+  return false;
+};
+
 function ReorderDragScrollView({
-  renderItem, // fn(item, containerItem)
-  renderContainer,
+  renderItem,
+  renderContainer = () => null,
   data,
   onChange,
-  isItemContainer,
-  containerItemsPath,
-  containerKeyExtractor,
-  keyExtractor,
+  isItemContainer = noContainers,
+  containerItemsPath = 'items',
+  containerKeyExtractor = idExtractor,
+  keyExtractor = idExtractor,
   FooterComponent,
   HeaderComponent,
   onScroll: onScrollProp, // worklet fn
+}: {
+  renderItem: MetaProps['renderItem'];
+  renderContainer?: MetaProps['renderContainer'];
+  data: Data;
+  onChange: (newData: Data) => void;
+  isItemContainer?: MetaProps['isItemContainer']; // WORKLET FUNC
+  containerItemsPath?: MetaProps['containerItemsPath']; // path to array of items in a conainer, as specified by object-path-immutable
+  keyExtractor?: MetaProps['keyExtractor']; // WORKLET FUNC
+  containerKeyExtractor?: MetaProps['containerKeyExtractor']; // WORKLET FUNC
+  FooterComponent?: React.ReactNode;
+  HeaderComponent?: React.ReactNode;
+  onScroll?: (y: number) => void;
 }) {
   const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
@@ -179,26 +202,6 @@ function ReorderDragScrollView({
   );
 }
 
-const idExtractor = item => {
-  'worklet';
-
-  return item.id;
-};
-
-const noContainers = () => {
-  'worklet';
-
-  return false;
-};
-
-ReorderDragScrollView.defaultProps = {
-  containerKeyExtractor: idExtractor,
-  keyExtractor: idExtractor,
-  isItemContainer: noContainers,
-  HeaderComponent: null,
-  FooterComponent: null,
-};
-
 export default ReorderDragScrollView;
 export * from './dragHandlers';
-
+export * from './types';

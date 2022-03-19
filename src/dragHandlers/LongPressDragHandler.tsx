@@ -2,9 +2,10 @@ import React, {useRef} from 'react';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, { useSharedValue, runOnJS } from 'react-native-reanimated';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
+import {DragProps} from '../types';
 
-function LongPressDragHandler({ dragProps = {}, children }: { dragProps: any, children: any }) {
-  const { onDrag, onDragStart, onDragEnd } = dragProps;
+function LongPressDragHandler({ dragProps, children }: { dragProps: DragProps, children: React.ReactNode}) {
+  const { onDrag, onDragStart, onDragEnd } = dragProps || {};
 
   const isPanning = useSharedValue(false);
   const y0 = useSharedValue(null);
