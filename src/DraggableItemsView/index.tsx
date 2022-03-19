@@ -7,7 +7,9 @@ import {
 import { update, get } from 'object-path-immutable';
 import Draggable from './Draggable';
 import { dataToOrder } from './utils';
+import {SortOrder, Item, Container} from '../types';
 import { CONTAINER_TYPE } from '../constants';
+import {ContainerMeasurements, ItemMeasurements, SortOrderContainer} from '../types';
 
 // While the drag translateY will be stored in the Draggable,
 // this component will keep track of the offsets, and recalculate them as
@@ -35,7 +37,6 @@ function DraggableItemsView({
   onChange,
   onDragEnd,
   dragState,
-  providedItemHeightsVal,
 }) {
   // pendingSortOrder looks like this
   // [
@@ -63,16 +64,16 @@ function DraggableItemsView({
     });
   }, [data]);
 
-  const onChangeSortOrder = sortOrder => {
+  const onChangeSortOrder = (sortOrder: SortOrder)  => {
     const items = [];
     const containers = [];
-    data.forEach(rootItem => {
+    data.forEach((rootItem: Item | Container) => {
       if (isItemContainer(rootItem)) {
         containers.push({
           id: containerKeyExtractor(rootItem),
           item: rootItem,
         });
-        get(rootItem, containerItemsPath).forEach(child => {
+        get(rootItem, containerItemsPath).forEach((child: Item) => {
           items.push({
             id: keyExtractor(child),
             item: child,
@@ -86,8 +87,8 @@ function DraggableItemsView({
       }
     });
 
-    const newData = sortOrder.map(orderObj => {
-      const isContainer = orderObj?.id;
+    const newData = sortOrder.map((orderObj: string | SortOrderContainer) => {
+      const isContainer = typeof orderObj === 'object';
       if (isContainer) {
         const container = containers.find(c => c.id === orderObj.id).item;
         return update(container, containerItemsPath,
@@ -107,19 +108,18 @@ function DraggableItemsView({
     if (!measurements.value) return null;
 
     let y = 0;
-    pendingSortOrder.value.forEach(orderObj => {
-      // if it's a container, calculate the y offsets of all the child items
-      if (orderObj?.id) {
+    pendingSortOrder.value.forEach((orderObj: string | SortOrderContainer) => {
+      const isContainer = typeof orderObj === 'object';
+      if (isContainer) {
+        // calculate the y offsets of all the child items
         const containerY = y;
-        const containerMeas = measurements.value.containerItems.find(c => c.id === orderObj.id);
+        const containerMeas = measurements.value.containerItems.find((c: ContainerMeasurements) => c.id === orderObj.id);
         if (containerMeas) {
           // container top height
           y += containerMeas.startY;
           let contentHeight = 0;
           orderObj.items.forEach(childId => {
-            const itemHeight = providedItemHeightsVal.value.find(i => i.id === childId)?.height
-              ?? measurements.value.items.find(i => i.id === childId)?.height
-              ?? 0;
+            const itemHeight = measurements.value.items.find((i: ItemMeasurements) => i.id === childId)?.height ?? 0;
             itemOffsets.push({
               id: childId,
               y,
@@ -138,9 +138,7 @@ function DraggableItemsView({
           y += containerMeas.height - containerMeas.endY;
         }
       } else {
-        const itemHeight = providedItemHeightsVal.value.find(i => i.id === orderObj)?.height
-          ?? measurements.value.items.find(i => i.id === orderObj)?.height
-          ?? 0;
+        const itemHeight = measurements.value.items.find((i: ItemMeasurements) => i.id === orderObj)?.height ?? 0;
         itemOffsets.push({
           id: orderObj,
           y,
@@ -163,11 +161,11 @@ function DraggableItemsView({
     const ranges = [];
 
     // an orderObj can be an id if it's an item or { id: containerId, items: []
-    pendingSortOrder.value.forEach((orderObj, idx) => {
-      const isCurrItemContainer = orderObj?.id !== undefined;
+    pendingSortOrder.value.forEach((orderObj: SortOrderContainer | string, idx: number) => {
+      const isCurrItemContainer = typeof orderObj === 'object';
 
       if (isCurrItemContainer) {
-        const containerMeas = measurements.value.containerItems.find(c => c.id === orderObj.id);
+        const containerMeas = measurements.value.containerItems.find((c: ContainerMeasurements) => c.id === orderObj.id);
         const containerOffset = offsets.value.containers.find(c => c.id === orderObj.id);
         if (containerMeas && containerOffset) {
           const topMidY = containerMeas.startY / 2 + containerOffset.y;
@@ -236,10 +234,10 @@ function DraggableItemsView({
 
   // original scroll offset - we need this because the original y is in
   // reference to the scrollview content, not the screen.
-  const origScrollOffset = useSharedValue(null);
+  const origScrollOffset = useSharedValue(0);
   // need to know where to render the dragged item in respect to the screen,
   // in case the offsets change upon dragging.
-  const origContentOffset = useSharedValue(null);
+  const origContentOffset = useSharedValue(0);
   const dragScreenOffset = useSharedValue(0);
 
   const dragItemTranslateY = useDerivedValue(() => dragScreenOffset.value
@@ -308,7 +306,6 @@ function DraggableItemsView({
   };
 
   const draggables = [];
-  /* eslint-disable react/jsx-props-no-spreading */
   data.forEach(rootItem => {
     if (isItemContainer(rootItem)) {
       // push child itsm

@@ -101,8 +101,6 @@ function ReorderDragScrollView({
 
   const msmts = useSharedValue<Measurements>(undefined);
 
-  const providedItemHeightsVal = useSharedValue([]);
-
   // functions that describe the data
   const metaProps = {
     renderItem,
@@ -156,7 +154,6 @@ function ReorderDragScrollView({
           data={data}
           metaProps={metaProps}
           measurements={msmts}
-          providedItemHeightsVal={providedItemHeightsVal}
           scrollIfNeeded={scrollIfNeeded}
           scrollOffset={scrollOffset}
           onDragEnd={onDragEnd}
@@ -170,7 +167,6 @@ function ReorderDragScrollView({
           data={data}
           metaProps={metaProps}
           onChangeMeasurements={m => {
-            console.log(m);
             msmts.value = m;
           }}
           dragState={dragState}

@@ -48,3 +48,6 @@ export type MetaProps = {
   isItemContainer: (i: Item | Container) => boolean;
   containerItemsPath: string;
 };
+
+export type SortOrderContainer = {id: string; items: Array<string>};
+export type SortOrder = Array<string>;
