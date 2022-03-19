@@ -50,6 +50,7 @@ export type MetaProps = {
     children: Array<React.ReactNode>;
     containerItem: Container;
     dragState: DragState;
+    position: Position;
     dragProps: DragProps;
   }) => React.ReactNode;
   containerKeyExtractor: (c: Container) => string;

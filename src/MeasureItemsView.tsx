@@ -174,6 +174,7 @@ function MeasureItemsView({
               containerItem: item,
               dragProps: undefined,
               dragState,
+              position: {rootIndex},
             })}
           </View>
         );
