@@ -21,7 +21,6 @@ import Animated, {
   withTiming,
   useAnimatedRef,
   useAnimatedScrollHandler,
-  useAnimatedStyle,
   scrollTo,
   measure,
   withRepeat,
@@ -31,6 +30,7 @@ import { View } from 'react-native';
 import MeasureItemsView from './MeasureItemsView';
 import DraggableItemsView from './DraggableItemsView';
 import { DIRECTION } from './constants';
+import {DragState, Measurements, MetaProps, Data} from './types';
 
 const { UP, DOWN } = DIRECTION;
 
@@ -38,26 +38,50 @@ const DRAG_THRESHOLD = 100;
 const SCROLL_AMOUNT = 5;
 const REFRESH_MS = 3;
 
+const idExtractor = item => {
+  'worklet';
+
+  return item.id;
+};
+
+const noContainers = () => {
+  'worklet';
+
+  return false;
+};
+
 function ReorderDragScrollView({
-  renderItem, // fn(item, containerItem)
-  renderContainer,
+  renderItem,
+  renderContainer = () => null,
   data,
   onChange,
-  isItemContainer,
-  containerItemsPath,
-  containerKeyExtractor,
-  keyExtractor,
+  isItemContainer = noContainers,
+  containerItemsPath = 'items',
+  containerKeyExtractor = idExtractor,
+  keyExtractor = idExtractor,
   FooterComponent,
   HeaderComponent,
   onScroll: onScrollProp, // worklet fn
+}: {
+  renderItem: MetaProps['renderItem'];
+  renderContainer?: MetaProps['renderContainer'];
+  data: Data;
+  onChange: (newData: Data) => void;
+  isItemContainer?: MetaProps['isItemContainer']; // WORKLET FUNC
+  containerItemsPath?: MetaProps['containerItemsPath']; // path to array of items in a conainer, as specified by object-path-immutable
+  keyExtractor?: MetaProps['keyExtractor']; // WORKLET FUNC
+  containerKeyExtractor?: MetaProps['containerKeyExtractor']; // WORKLET FUNC
+  FooterComponent?: React.ReactNode;
+  HeaderComponent?: React.ReactNode;
+  onScroll?: (y: number) => void;
 }) {
-  const [dragState, setDragState] = useState({
+  const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
     isContainer: null,
     id: null,
   });
   const onDragEnd = () => {
-    setDragState(p => ({ ...p, isDragging: false }));
+    setDragState((p: DragState) => ({ ...p, isDragging: false }));
   };
 
   const scrollView = useAnimatedRef<Animated.ScrollView>();
@@ -68,7 +92,7 @@ function ReorderDragScrollView({
     if (!dragState.isDragging) cancelAnimation(scrollAnim);
   }, [dragState.isDragging]);
 
-  const scrollIfNeeded = (y, lastGestureDirection) => {
+  const scrollIfNeeded = (y: number, lastGestureDirection: typeof DIRECTION.UP | typeof DIRECTION.DOWN) => {
     'worklet';
 
     const { height: scrollViewHeight, pageY: scrollViewY } = measure(scrollView);
@@ -98,15 +122,7 @@ function ReorderDragScrollView({
     },
   });
 
-  const autoHeight = useSharedValue<undefined | number>(undefined);
-  const msmts = useSharedValue(undefined);
-
-  const measuredStyle = useAnimatedStyle(() => {
-    if (autoHeight.value === undefined) return {};
-    return { height: withTiming(autoHeight.value) };
-  });
-
-  const providedItemHeightsVal = useSharedValue([]);
+  const msmts = useSharedValue<Measurements>(undefined);
 
   // functions that describe the data
   const metaProps = {
@@ -157,29 +173,26 @@ function ReorderDragScrollView({
           contentViewY.value = y;
         }}
       >
-        <Animated.View style={measuredStyle}>
-          <DraggableItemsView
-            data={data}
-            metaProps={metaProps}
-            measurements={msmts}
-            providedItemHeightsVal={providedItemHeightsVal}
-            scrollIfNeeded={scrollIfNeeded}
-            scrollOffset={scrollOffset}
-            onDragEnd={onDragEnd}
-            onDragStart={onDragStart}
-            onChange={onChange}
-            dragState={dragState}
-            scrollViewScreenY={scrollViewScreenY}
-            contentViewY={contentViewY}
-          />
-        </Animated.View>
+        <DraggableItemsView
+          data={data}
+          metaProps={metaProps}
+          measurements={msmts}
+          scrollIfNeeded={scrollIfNeeded}
+          scrollOffset={scrollOffset}
+          onDragEnd={onDragEnd}
+          onDragStart={onDragStart}
+          onChange={onChange}
+          dragState={dragState}
+          scrollViewScreenY={scrollViewScreenY}
+          contentViewY={contentViewY}
+        />
         <MeasureItemsView
           data={data}
           metaProps={metaProps}
-          onChangeMeasurements={m => { msmts.value = m; }}
-          onChangeHeight={h => { autoHeight.value = h; }}
+          onChangeMeasurements={m => {
+            msmts.value = m;
+          }}
           dragState={dragState}
-          providedItemHeightsVal={providedItemHeightsVal}
         />
       </View>
       <View style={{ position: 'relative', zIndex: -2 }}>
@@ -189,26 +202,6 @@ function ReorderDragScrollView({
   );
 }
 
-const idExtractor = item => {
-  'worklet';
-
-  return item.id;
-};
-
-const noContainers = () => {
-  'worklet';
-
-  return false;
-};
-
-ReorderDragScrollView.defaultProps = {
-  containerKeyExtractor: idExtractor,
-  keyExtractor: idExtractor,
-  isItemContainer: noContainers,
-  HeaderComponent: null,
-  FooterComponent: null,
-};
-
 export default ReorderDragScrollView;
 export * from './dragHandlers';
-
+export * from './types';

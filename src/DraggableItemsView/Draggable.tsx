@@ -1,5 +1,5 @@
 /* eslint-disable no-param-reassign */
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -15,6 +15,7 @@ import {
   move,
   positionsEqual,
 } from './utils';
+import {Position} from '../types';
 
 const { UP, DOWN } = DIRECTION;
 
@@ -82,6 +83,28 @@ function Draggable({
     return 0;
   });
 
+  // HACK dragItemTranslateY needs to be wrapped with withTiming, otherwise
+  // it'll crash
+  const dragItemTranslateYInternal = useDerivedValue(() => {
+    const isDragging = dragStateVal.value.isDragging
+      && !!dragStateVal.value.isContainer === !!isContainer
+      && dragStateVal.value.id === id;
+
+    const isParentContainerDragging = dragStateVal.value.isContainer
+      && dragStateVal.value.id === containerIdVal.value;
+
+    let translateY;
+    if (isDragging) {
+      translateY = dragItemTranslateY.value;
+    } else if (isParentContainerDragging) {
+      translateY = dragItemTranslateY.value + offsetFromContainer.value;
+    } else {
+      translateY = offset.value?.y;
+    }
+
+    return withTiming(translateY, { duration: 50 });
+  });
+
   const style = useAnimatedStyle(() => {
     const isDragging = dragStateVal.value.isDragging
       && !!dragStateVal.value.isContainer === !!isContainer
@@ -92,10 +115,8 @@ function Draggable({
     const isParentContainerAnimating = animatingContainers.value.includes(containerIdVal.value);
 
     let translateY;
-    if (isDragging) {
-      translateY = dragItemTranslateY.value;
-    } else if (isParentContainerDragging) {
-      translateY = dragItemTranslateY.value + offsetFromContainer.value;
+    if (isDragging || isParentContainerDragging) {
+      translateY = dragItemTranslateYInternal.value;
     } else {
       translateY = withTiming(offset.value?.y);
     }
@@ -136,7 +157,7 @@ function Draggable({
     opacity: 0,
   }));
 
-  const [position, setPosition] = useState<any>({});
+  const [position, setPosition] = useState<Position>(getCurrentPosition(id, isContainer, pendingSortOrder.value));
   useDerivedValue(() => {
     let pos;
     if (isContainer) {
@@ -169,9 +190,6 @@ function Draggable({
             item: child,
             containerItem,
             dragState: dragStateProp,
-            onChangeHeightVal: () => {
-              'worklet';
-            },
             position: {
               rootIndex: position.rootIndex,
               childIndex,
@@ -185,7 +203,7 @@ function Draggable({
   // finger absoluteY
   const fingerScreenY = useSharedValue(0);
 
-  const handleDragStart = absoluteY => {
+  const handleDragStart = useCallback(absoluteY => {
     'worklet';
 
     onDragStart(id, isContainer, offset.value?.y);
@@ -197,9 +215,9 @@ function Draggable({
       animatingContainers.value = containers;
     }
     dragScreenOffset.value = 0;
-  };
+  }, []);
 
-  const handleDragEnd = () => {
+  const handleDragEnd = useCallback(() => {
     'worklet';
 
     onDragEnd(id, isContainer);
@@ -224,7 +242,7 @@ function Draggable({
       },
     );
     runOnJS(onChangeSortOrder)(pendingSortOrder.value);
-  };
+  }, []);
 
   const handleDrag = (eventY, absoluteY) => {
     'worklet';
@@ -276,7 +294,6 @@ function Draggable({
           onDrag: handleDrag,
         },
         dragState: dragStateProp,
-        onChangeHeightVal: () => { 'worklet'; },
         position,
       })}
     </Animated.View>

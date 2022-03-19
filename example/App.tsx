@@ -1,5 +1,4 @@
 // This is an example test file.
-/* eslint-disable */
 import React from 'react';
 import {View, Text, StyleSheet, Button, LayoutChangeEvent} from 'react-native';
 import Animated, {
@@ -14,7 +13,7 @@ import ReorderDragScrollView, {
 
 const styles = StyleSheet.create({
   item: {
-    backgroundColor: 'blue',
+    backgroundColor: 'gray',
     textAlign: 'center',
     flex: 1,
     alignItems: 'center',
@@ -54,13 +53,8 @@ const sampleData = [
   },
 ];
 
-function Item({item, containerItem, dragProps, dragState, onChangeHeightVal}) {
-  if (item.id === 0) {
-    console.log('render0');
-  }
-
+function Item({item, dragProps, dragState}) {
   const isAnimating = useSharedValue(false);
-  const baseHeight = useSharedValue<number | null>(null);
   const progress = useDerivedValue(() => {
     if (dragState?.isDragging || dragState?.isAnimating?.value) {
       isAnimating.value = true;
@@ -77,14 +71,16 @@ function Item({item, containerItem, dragProps, dragState, onChangeHeightVal}) {
       layout: {height},
     },
   }: LayoutChangeEvent) => {
-    if (!isAnimating.value) collapsibleHeightVal.value = height;
+    if (!isAnimating.value) {
+      collapsibleHeightVal.value = height;
+    }
   };
   const style = useAnimatedStyle(() => {
     const collapsibleHeight = progress.value * collapsibleHeightVal.value;
-    if (baseHeight.value !== null)
-      onChangeHeightVal(collapsibleHeight + baseHeight.value);
 
-    if (collapsibleHeightVal.value === 0) return {};
+    if (collapsibleHeightVal.value === 0) {
+      return {};
+    }
 
     return {
       height: collapsibleHeight,
@@ -92,31 +88,18 @@ function Item({item, containerItem, dragProps, dragState, onChangeHeightVal}) {
     };
   }, [dragState?.isDragging]);
 
-  const handleTopLayout = ({
-    nativeEvent: {
-      layout: {height},
-    },
-  }: LayoutChangeEvent) => {
-    baseHeight.value = height;
-  };
-
   return (
     <View>
       <LongPressDragHandler dragProps={dragProps}>
-        <View style={styles.item} onLayout={handleTopLayout}>
-          <Text
-            style={[
-              containerItem ? {paddingLeft: 20} : undefined,
-              styles.draggable,
-            ]}
-          >
-            {item.value}
-          </Text>
+        <View style={styles.item}>
+          <Text style={styles.draggable}>{`item ${item.value}`}</Text>
         </View>
       </LongPressDragHandler>
-      <Animated.View style={style}>
+      <Animated.View style={[style, {backgroundColor: 'lightgray'}]}>
         <View onLayout={handleLayout}>
-          <Text style={styles.collapsibleText}>collapsible</Text>
+          <Text
+            style={styles.collapsibleText}
+          >{`item ${item.value} - collapsible body`}</Text>
         </View>
       </Animated.View>
     </View>
@@ -131,7 +114,7 @@ function App() {
     <>
       <LongPressDragHandler dragProps={dragProps}>
         <View style={styles.topContainer}>
-          <Text>{containerItem.id}</Text>
+          <Text>{`${containerItem.id} - this is a container`}</Text>
         </View>
       </LongPressDragHandler>
       {children}

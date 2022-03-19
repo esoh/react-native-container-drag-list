@@ -1,9 +1,26 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useCallback } from 'react';
 import { View } from 'react-native';
 import { cloneDeep } from 'lodash';
 import { get } from 'object-path-immutable';
+import {
+  Measurements,
+  ContainerMeasurements,
+  ItemMeasurements,
+  Item,
+  Data,
+  Container,
+  MetaProps,
+  DragState,
+} from './types';
 
-const removeDeleted = (measurementsInput, data, {
+type MeasureItemsViewProps = {
+  data: Data;
+  metaProps: MetaProps;
+  onChangeMeasurements: (m: Measurements) => void;
+  dragState: DragState,
+};
+
+const _removeDeleted = (measurementsInput: Measurements, data: Data, {
   isItemContainer,
   containerItemsPath,
   containerKeyExtractor,
@@ -15,25 +32,46 @@ const removeDeleted = (measurementsInput, data, {
 
   data.forEach(rootItem => {
     if (isItemContainer(rootItem)) {
-      get(rootItem, containerItemsPath).forEach(childItem => {
-        const childMeas = measurements.items.find(i => i.id === keyExtractor(childItem));
+      get(rootItem, containerItemsPath).forEach((childItem: Item) => {
+        const childMeas = measurements.items.find((i: ItemMeasurements) => i.id === keyExtractor(childItem));
         if (childMeas) items.push(childMeas);
       });
       const containerMeas = measurements.containerItems.find(
-        i => i.id === containerKeyExtractor(rootItem),
+         (i: ContainerMeasurements) => i.id === containerKeyExtractor(rootItem),
       );
       if (containerMeas) containerItems.push(containerMeas);
     } else {
-      const itemMeas = measurements.items.find(i => i.id === keyExtractor(rootItem));
+      const itemMeas = measurements.items.find((i: ItemMeasurements) => i.id === keyExtractor(rootItem));
       if (itemMeas) items.push(itemMeas);
     }
   });
   return { containerItems, items };
 };
 
-// TODO - might wanna add dragState so that height and measurements are always
-// up to date, such that if a dragState changes measurements, it will take
-// effect on the MeasureItemsView items.
+const _addMeasurement = (measurements: Measurements, measurementValues: ContainerMeasurements | ItemMeasurements, isContainer = false) => {
+
+  if (isContainer) {
+    const containerMeasIdx = measurements.containerItems.findIndex(c => c.id === measurementValues.id);
+    if (containerMeasIdx !== -1) {
+      measurements.containerItems[containerMeasIdx] = {
+        ...measurements.containerItems[containerMeasIdx],
+        ...measurementValues,
+      };
+    } else {
+      measurements.containerItems.push(measurementValues);
+    }
+  } else {
+    const itemMeasIdx = measurements.items.findIndex(i => i.id === measurementValues.id);
+    if (itemMeasIdx !== -1) {
+      measurements.items[itemMeasIdx] = {
+        ...measurements.items[itemMeasIdx],
+        ...measurementValues,
+      };
+    } else {
+      measurements.items.push(measurementValues);
+    }
+  }
+}
 
 function MeasureItemsView({
   data,
@@ -45,14 +83,14 @@ function MeasureItemsView({
     containerKeyExtractor,
     keyExtractor,
   },
-  onChangeHeight,
-  onChangeMeasurements,
+  onChangeMeasurements, // JS layout measurements
   dragState,
-  providedItemHeightsVal,
-}) {
-  const allMeasured = measurements => data.every(rootItem => {
+}: MeasureItemsViewProps) {
+  const measurements = useRef<Measurements>({ containerItems: [], items: [] });
+
+  const allMeasured = useCallback((measurements: Measurements) => data.every((rootItem: Item | Container) => {
     if (isItemContainer(rootItem)) {
-      const childrenMeasured = get(rootItem, containerItemsPath).every(childItem => {
+      const childrenMeasured = get(rootItem, containerItemsPath).every((childItem: Item) => {
         const childId = keyExtractor(childItem);
         const meas = measurements.items.find(({ id }) => id === childId);
         return (meas?.height !== undefined);
@@ -69,92 +107,42 @@ function MeasureItemsView({
     const itemId = keyExtractor(rootItem);
     const meas = measurements.items.find(({ id }) => id === itemId);
     return meas?.height !== undefined;
-  });
+  }), [data]);
 
-  const measurements = useRef({ containerItems: [], items: [] });
 
-  const handleOnLayout = (id, isContainer = false) => ({ nativeEvent: { layout: { height } } }) => {
-    if (isContainer) {
-      const containerMeasIdx = measurements.current.containerItems.findIndex(c => c.id === id);
-      if (containerMeasIdx !== -1) {
-        measurements.current.containerItems[containerMeasIdx] = {
-          ...measurements.current.containerItems[containerMeasIdx],
-          height,
-        };
-      } else {
-        measurements.current.containerItems.push({ id, height });
-      }
-    } else {
-      const itemMeasIdx = measurements.current.items.findIndex(i => i.id === id);
-      if (itemMeasIdx !== -1) {
-        measurements.current.items[itemMeasIdx] = {
-          ...measurements.current.items[itemMeasIdx],
-          height,
-        };
-      } else {
-        measurements.current.items.push({ id, height });
-      }
-    }
+  const handleOnLayout = (id: string, isContainer = false) => ({ nativeEvent: { layout: { height } } }) => {
+    _addMeasurement(measurements.current, {id, height}, isContainer);
     if (allMeasured(measurements.current)) onChangeMeasurements({ ...measurements.current });
   };
 
-  const handleTopPlaceholderOnLayout = id => ({ nativeEvent: { layout: { y } } }) => {
-    const containerMeasIdx = measurements.current.containerItems.findIndex(c => c.id === id);
-    if (containerMeasIdx !== -1) {
-      measurements.current.containerItems[containerMeasIdx] = {
-        ...measurements.current.containerItems[containerMeasIdx],
-        startY: y,
-      };
-    } else {
-      measurements.current.containerItems.push({ id, startY: y });
-    }
+  const handleTopPlaceholderOnLayout = (id: string) => ({ nativeEvent: { layout: { y } } }) => {
+    _addMeasurement(measurements.current, {id, startY: y}, true);
     if (allMeasured(measurements.current)) onChangeMeasurements({ ...measurements.current });
   };
 
-  const handleBottomPlaceholderOnLayout = id => ({ nativeEvent: { layout: { y } } }) => {
-    const containerMeasIdx = measurements.current.containerItems.findIndex(c => c.id === id);
-    if (containerMeasIdx !== -1) {
-      measurements.current.containerItems[containerMeasIdx] = {
-        ...measurements.current.containerItems[containerMeasIdx],
-        endY: y,
-      };
-    } else {
-      measurements.current.containerItems.push({ id, endY: y });
-    }
+  const handleBottomPlaceholderOnLayout = (id: string) => ({ nativeEvent: { layout: { y } } }) => {
+    _addMeasurement(measurements.current, {id, endY: y}, true);
     if (allMeasured(measurements.current)) onChangeMeasurements({ ...measurements.current });
-  };
-
-  const handleChangeItemHeight = id => h => {
-    'worklet';
-
-    const providedItemHeights = [...providedItemHeightsVal.value];
-    const idx = providedItemHeights.findIndex(i => i.id === id);
-    if (idx === -1) {
-      providedItemHeights.push({ id, height: h });
-    } else {
-      providedItemHeights[idx] = { id, height: h };
-    }
-    providedItemHeightsVal.value = providedItemHeights;
   };
 
   // THIS IS STEP 1
   const items = useMemo(() => {
-    measurements.current = removeDeleted(measurements.current, data, {
+    measurements.current = _removeDeleted(measurements.current, data, {
       isItemContainer,
       containerItemsPath,
       containerKeyExtractor,
       keyExtractor,
     });
-    return data.map((item, rootIndex) => {
+    return data.map((item: Item | Container, rootIndex: number) => {
       if (isItemContainer(item)) {
-        const children = get(item, containerItemsPath).map((child, childIndex) => {
+        const children = get(item, containerItemsPath).map((child: Item, childIndex: number) => {
           const id = keyExtractor(child);
           return (
             <View key={id} onLayout={handleOnLayout(id)}>
               {renderItem({
                 item: child,
+                dragProps: undefined,
                 dragState,
-                onChangeHeightVal: handleChangeItemHeight(id),
                 position: { rootIndex, childIndex },
               })}
             </View>
@@ -184,6 +172,7 @@ function MeasureItemsView({
             {renderContainer({
               children,
               containerItem: item,
+              dragProps: undefined,
               dragState,
             })}
           </View>
@@ -196,8 +185,8 @@ function MeasureItemsView({
         <View key={id} onLayout={handleOnLayout(id)}>
           {renderItem({
             item,
+            dragProps: undefined,
             dragState,
-            onChangeHeightVal: handleChangeItemHeight(id),
             position: { rootIndex },
           })}
         </View>
@@ -207,12 +196,8 @@ function MeasureItemsView({
 
   return (
     <View
-      onLayout={({ nativeEvent: { layout: { height } } }) => {
-        onChangeHeight(height);
-      }}
       style={{
         opacity: 0,
-        position: 'absolute',
         overflow: 'hidden',
         zIndex: -3,
       }}
@@ -222,5 +207,4 @@ function MeasureItemsView({
   );
 }
 
-export default MeasureItemsView;
-
+export default React.memo(MeasureItemsView, (prevProps: MeasureItemsViewProps, nextProps: MeasureItemsViewProps) => prevProps.dragState === nextProps.dragState && prevProps.data === nextProps.data);
