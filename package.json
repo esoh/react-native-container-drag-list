@@ -1,6 +1,6 @@
 {
   "name": "@esoh/react-native-container-drag-list",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "ScrollView containing list items that can be dragged in/out of containers",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
