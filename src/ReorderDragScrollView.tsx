@@ -10,11 +10,7 @@
  * 4. If finger position is within the scroll range, then scroll the ScrollView.
  */
 
-import React, {
-  useState,
-  useCallback,
-  useEffect,
-} from 'react';
+import React, {useState, useCallback, useEffect} from 'react';
 import Animated, {
   runOnUI,
   useSharedValue,
@@ -26,22 +22,40 @@ import Animated, {
   withRepeat,
   cancelAnimation,
 } from 'react-native-reanimated';
-import { View } from 'react-native';
+import {StyleSheet, View} from 'react-native';
 import MeasureItemsView from './MeasureItemsView';
-import DraggableItemsView from './DraggableItemsView';
-import { DIRECTION } from './constants';
-import {DragState, Measurements, MetaProps, Data} from './types';
+import DraggablesView from './DraggablesView';
+import {DIRECTION} from './constants';
+import {
+  DragState,
+  Measurements,
+  MetaProps,
+  Data,
+  Item,
+  Container,
+  Direction,
+} from './types';
 
-const { UP, DOWN } = DIRECTION;
+const {UP, DOWN} = DIRECTION;
 
 const DRAG_THRESHOLD = 100;
 const SCROLL_AMOUNT = 5;
 const REFRESH_MS = 3;
 
-const idExtractor = item => {
+const styles = StyleSheet.create({
+  scrollViewContentContainer: {flexGrow: 1},
+  scrollViewHeaderOrFooterComponent: {position: 'relative', zIndex: -2},
+  scrollViewDraggableContent: {position: 'relative', zIndex: 2},
+  measure: {
+    opacity: 0,
+    zIndex: -3,
+  },
+});
+
+const idExtractor = (itemOrContainer: Item | Container) => {
   'worklet';
 
-  return item.id;
+  return itemOrContainer.id;
 };
 
 const noContainers = () => {
@@ -81,7 +95,7 @@ function ReorderDragScrollView({
     id: null,
   });
   const onDragEnd = () => {
-    setDragState((p: DragState) => ({ ...p, isDragging: false }));
+    setDragState((p: DragState) => ({...p, isDragging: false}));
   };
 
   const scrollView = useAnimatedRef<Animated.ScrollView>();
@@ -89,40 +103,60 @@ function ReorderDragScrollView({
   const contentHeight = useSharedValue(0);
   const scrollAnim = useSharedValue(0);
   useEffect(() => {
-    if (!dragState.isDragging) cancelAnimation(scrollAnim);
-  }, [dragState.isDragging]);
-
-  const scrollIfNeeded = (y: number, lastGestureDirection: typeof DIRECTION.UP | typeof DIRECTION.DOWN) => {
-    'worklet';
-
-    const { height: scrollViewHeight, pageY: scrollViewY } = measure(scrollView);
-    if (y <= scrollViewY + DRAG_THRESHOLD && lastGestureDirection === UP) {
-      // trigger scroll loop
-      scrollAnim.value = withRepeat(withTiming(0, { duration: REFRESH_MS }, () => {
-        scrollOffset.value = Math.max(scrollOffset.value - SCROLL_AMOUNT, 0);
-        scrollTo(scrollView, 0, scrollOffset.value, false);
-      }), -1);
-    } else if (y >= scrollViewY + scrollViewHeight - DRAG_THRESHOLD
-      && lastGestureDirection === DOWN) {
-      // trigger scroll loop
-      scrollAnim.value = withRepeat(withTiming(0, { duration: REFRESH_MS }, () => {
-        scrollOffset.value = Math.min(
-          scrollOffset.value + SCROLL_AMOUNT, contentHeight.value - scrollViewHeight,
-        );
-        scrollTo(scrollView, 0, scrollOffset.value, false);
-      }), -1);
-    } else {
+    if (!dragState.isDragging) {
       cancelAnimation(scrollAnim);
     }
-  };
+  }, [dragState.isDragging, scrollAnim]);
+
+  const scrollIfNeeded = useCallback(
+    (y: number, lastGestureDirection: Direction | null) => {
+      'worklet';
+
+      const {height: scrollViewHeight, pageY: scrollViewY} =
+        measure(scrollView);
+      if (y <= scrollViewY + DRAG_THRESHOLD && lastGestureDirection === UP) {
+        // trigger scroll loop
+        scrollAnim.value = withRepeat(
+          withTiming(0, {duration: REFRESH_MS}, () => {
+            scrollOffset.value = Math.max(
+              scrollOffset.value - SCROLL_AMOUNT,
+              0,
+            );
+            scrollTo(scrollView, 0, scrollOffset.value, false);
+          }),
+          -1,
+        );
+      } else if (
+        y >= scrollViewY + scrollViewHeight - DRAG_THRESHOLD &&
+        lastGestureDirection === DOWN
+      ) {
+        // trigger scroll loop
+        scrollAnim.value = withRepeat(
+          withTiming(0, {duration: REFRESH_MS}, () => {
+            scrollOffset.value = Math.min(
+              scrollOffset.value + SCROLL_AMOUNT,
+              contentHeight.value - scrollViewHeight,
+            );
+            scrollTo(scrollView, 0, scrollOffset.value, false);
+          }),
+          -1,
+        );
+      } else {
+        cancelAnimation(scrollAnim);
+      }
+    },
+    [contentHeight, scrollAnim, scrollOffset, scrollView],
+  );
   const onScroll = useAnimatedScrollHandler({
-    onScroll: ({ contentOffset: { y } }) => {
+    onScroll: ({contentOffset: {y}}) => {
       scrollOffset.value = y;
-      if (onScrollProp) onScrollProp(y);
+      if (onScrollProp) {
+        onScrollProp(y);
+      }
     },
   });
 
-  const msmts = useSharedValue<Measurements>(undefined);
+  const msmts = useSharedValue<Measurements | undefined>(undefined);
 
   // functions that describe the data
   const metaProps = {
@@ -137,65 +171,74 @@ function ReorderDragScrollView({
   const contentViewY = useSharedValue(0);
   const scrollViewScreenY = useSharedValue(0);
 
-  const onDragStart = useCallback((id, isContainer) => {
-    runOnUI(() => {
-      'worklet';
+  const onDragStart = useCallback(
+    (id, isContainer) => {
+      runOnUI(() => {
+        'worklet';
 
-      if (scrollView) {
-        const { pageY } = measure(scrollView);
-        scrollViewScreenY.value = pageY;
-      }
-    })();
-    setDragState({
-      isDragging: true,
-      isContainer,
-      id,
-    });
-  }, [setDragState]);
+        if (scrollView) {
+          const {pageY} = measure(scrollView);
+          scrollViewScreenY.value = pageY;
+        }
+      })();
+      setDragState({
+        isDragging: true,
+        isContainer,
+        id,
+      });
+    },
+    [setDragState, scrollViewScreenY, scrollView],
+  );
 
   return (
     <Animated.ScrollView
       ref={scrollView}
-      contentContainerStyle={{ flexGrow: 1 }}
+      contentContainerStyle={styles.scrollViewContentContainer}
       scrollEnabled={!dragState.isDragging}
       onScroll={onScroll}
-      onContentSizeChange={(w, h) => {
+      onContentSizeChange={(_w, h) => {
         contentHeight.value = h;
       }}
       scrollEventThrottle={16}
     >
-      <View style={{ position: 'relative', zIndex: -2 }}>
+      <View style={styles.scrollViewHeaderOrFooterComponent}>
         {HeaderComponent}
       </View>
       <View
-        style={{ position: 'relative', zIndex: 2 }}
-        onLayout={({ nativeEvent: { layout: { y } } }) => {
+        style={styles.scrollViewDraggableContent}
+        onLayout={({
+          nativeEvent: {
+            layout: {y},
+          },
+        }) => {
           contentViewY.value = y;
         }}
       >
-        <DraggableItemsView
+        <DraggablesView
           data={data}
           metaProps={metaProps}
           measurements={msmts}
-          scrollIfNeeded={scrollIfNeeded}
-          scrollOffset={scrollOffset}
           onDragEnd={onDragEnd}
           onDragStart={onDragStart}
+          dragState={dragState}
           onChange={onChange}
-          dragState={dragState}
-          scrollViewScreenY={scrollViewScreenY}
+          scrollIfNeeded={scrollIfNeeded}
+          scrollOffset={scrollOffset}
           contentViewY={contentViewY}
+          scrollViewScreenY={scrollViewScreenY}
         />
-        <MeasureItemsView
-          data={data}
-          metaProps={metaProps}
-          onChangeMeasurements={m => {
-            msmts.value = m;
-          }}
-          dragState={dragState}
-        />
+        <View style={styles.measure} pointerEvents="none">
+          <MeasureItemsView
+            data={data}
+            metaProps={metaProps}
+            onChangeMeasurements={m => {
+              msmts.value = m;
+            }}
+            dragState={dragState}
+          />
+        </View>
       </View>
-      <View style={{ position: 'relative', zIndex: -2 }}>
+      <View style={styles.scrollViewHeaderOrFooterComponent}>
         {FooterComponent}
       </View>
     </Animated.ScrollView>

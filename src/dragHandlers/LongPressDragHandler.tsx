@@ -10,14 +10,14 @@ function LongPressDragHandler({ dragProps, children }: { dragProps: DragProps, c
   const isPanning = useSharedValue(false);
   const y0 = useSharedValue(null);
 
-  const onDragStartInternal = (y: number) => {
+  const onDragStartInternal = React.useCallback((y: number) => {
     ReactNativeHapticFeedback.trigger('impactLight');
     if (onDragStart) onDragStart(y);
-  };
+  }, []);
 
-  const onDragEndInternal = (y: number) => {
+  const onDragEndInternal = React.useCallback((y: number) => {
     if (onDragEnd) onDragEnd(y);
-  };
+  }, []);
 
   const panGesture = Gesture.Pan()
     .onBegin((e) => {

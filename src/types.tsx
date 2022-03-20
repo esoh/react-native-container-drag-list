@@ -1,7 +1,9 @@
 import React from 'react';
+import {SharedValue} from 'react-native-reanimated';
+import {CONTAINER_TYPE, DIRECTION} from './constants';
 
 export type Item = any;
-export type Container = {[key:string]: any};
+export type Container = {[key: string]: any};
 export type Data = Array<Item | Container>;
 
 export type DragState = {
@@ -10,16 +12,31 @@ export type DragState = {
   id: null | string;
 };
 
-export type ContainerMeasurements = {
+export type ContainerMeasurementsPending = {
   id: string;
   height?: number;
   startY?: number; // Y value where items in the container start
   endY?: number; // Y value where items in the container end
 };
 
-export type ItemMeasurements = {
+export interface ContainerMeasurements extends ContainerMeasurementsPending {
+  height: number;
+  startY: number; // Y value where items in the container start
+  endY: number; // Y value where items in the container end
+}
+
+export type ItemMeasurementsPending = {
   id: string;
   height?: number;
+};
+
+export interface ItemMeasurements extends ItemMeasurementsPending {
+  height: number;
+}
+
+export type MeasurementsPending = {
+  containerItems: Array<ContainerMeasurementsPending>;
+  items: Array<ItemMeasurementsPending>;
 };
 
 export type Measurements = {
@@ -32,11 +49,13 @@ export type Position = {
   childIndex?: number; // if this is an item in a container, this will be the index of the index within the container
 };
 
-export type DragProps = {
-  onDrag: (yDelta: number, absoluteY: number) => void;
-  onDragStart: (absoluteY: number) => void;
-  onDragEnd: (absoluteY: number) => void;
-} | undefined;
+export type DragProps =
+  | {
+      onDrag: (yDelta: number, absoluteY: number) => void;
+      onDragStart: (absoluteY: number) => void;
+      onDragEnd: (absoluteY: number) => void;
+    }
+  | undefined;
 
 export type MetaProps = {
   renderItem: (info: {
@@ -47,7 +66,7 @@ export type MetaProps = {
   }) => React.ReactNode;
   keyExtractor: (item: Item) => string;
   renderContainer: (info: {
-    children: Array<React.ReactNode>;
+    children?: React.ReactNode;
     containerItem: Container;
     dragState: DragState;
     position: Position;
@@ -59,4 +78,40 @@ export type MetaProps = {
 };
 
 export type SortOrderContainer = {id: string; items: Array<string>};
-export type SortOrder = Array<string>;
+export type SortOrder = Array<string | SortOrderContainer>;
+
+export type ContainerOffset = {
+  id: string;
+  y: number;
+  contentHeight: number;
+  height: number;
+};
+
+export type ItemOffset = {
+  id: string;
+  y: number;
+  height: number;
+};
+
+export type Offsets = {
+  items: Array<ItemOffset>;
+  containers: Array<ContainerOffset>;
+};
+
+export type Direction = typeof DIRECTION.DOWN | typeof DIRECTION.UP;
+
+export type DragValues = {
+  isDraggingValue: SharedValue<boolean>;
+  isDraggingContainerValue: SharedValue<boolean>;
+  itemBeingDraggedIdValue: SharedValue<string | null>;
+  dragItemTranslateYValue: SharedValue<number>;
+  animatingParentContainers: SharedValue<Array<string>>;
+};
+
+type RangeMapObject = {
+  y: number;
+  rootIndex: number;
+  container?: typeof CONTAINER_TYPE.TOP | typeof CONTAINER_TYPE.BOTTOM;
+  childIndex?: number;
+};
+export type RangeMapArray = Array<RangeMapObject>;
