@@ -42,7 +42,9 @@ const _getCurrentPosition = (id: string, order: SortOrder) => {
     }
   }
 
-  throw new Error('is this possible');
+  // this is possible if you just added an item - I suppose order wouldn't be
+  // updated with the new item
+  return null;
 };
 
 const styles = StyleSheet.create({
