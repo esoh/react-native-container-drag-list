@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect} from 'react';
+import React, {useCallback, useEffect, useRef} from 'react';
 import {update, get} from 'object-path-immutable';
 import {
   useDerivedValue,
@@ -78,6 +78,7 @@ function DraggablesView({
     }),
   );
 
+  const dataRef = useRef(data);
   useEffect(() => {
     pendingSortOrder.value = dataToOrder(data, {
       isItemContainer,
@@ -85,13 +86,14 @@ function DraggablesView({
       containerKeyExtractor,
       keyExtractor,
     });
+    dataRef.current = data;
   }, [data]);
 
   const onChangeSortOrder = useCallback(
     (sortOrder: SortOrder) => {
       const items: Array<{id: string; item: Item}> = [];
       const containers: Array<{id: string; item: Container}> = [];
-      data.forEach((rootItem: Item | Container) => {
+      dataRef.current.forEach((rootItem: Item | Container) => {
         if (isItemContainer(rootItem)) {
           containers.push({
             id: containerKeyExtractor(rootItem),
