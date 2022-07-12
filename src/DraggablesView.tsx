@@ -258,31 +258,28 @@ function DraggablesView({
 
   const animatingParentContainers = useSharedValue<Array<string>>([]);
 
-  const newDraggableItem = useCallback(
-    ({item}: {item: Item}) => {
-      const id = keyExtractor(item);
-      return (
-        <DraggableItem
-          key={id}
-          id={id}
-          renderItem={renderItem}
-          item={item}
-          dragState={dragState}
-          offsets={offsets}
-          pendingSortOrder={pendingSortOrder}
-          {...createDragProps({id, isContainer: false})}
-          dragValues={{
-            isDraggingValue,
-            isDraggingContainerValue,
-            itemBeingDraggedIdValue,
-            dragItemTranslateYValue,
-            animatingParentContainers,
-          }}
-        />
-      );
-    },
-    [offsets, dragState, createDragProps],
-  );
+  const newDraggableItem = ({item}: {item: Item}) => {
+    const id = keyExtractor(item);
+    return (
+      <DraggableItem
+        key={id}
+        id={id}
+        renderItem={renderItem}
+        item={item}
+        dragState={dragState}
+        offsets={offsets}
+        pendingSortOrder={pendingSortOrder}
+        {...createDragProps({id, isContainer: false})}
+        dragValues={{
+          isDraggingValue,
+          isDraggingContainerValue,
+          itemBeingDraggedIdValue,
+          dragItemTranslateYValue,
+          animatingParentContainers,
+        }}
+      />
+    );
+  };
 
   const newDraggableContainer = useCallback(
     ({

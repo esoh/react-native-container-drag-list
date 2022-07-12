@@ -3,6 +3,7 @@
   "version": "0.2.5",
   "description": "ScrollView containing list items that can be dragged in/out of containers",
   "main": "lib/index.js",
+  "react-native": "src/index",
   "types": "lib/index.d.ts",
   "files": [
     "lib/**/*",

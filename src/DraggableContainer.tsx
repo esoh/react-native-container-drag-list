@@ -20,6 +20,7 @@ import {
   DragState,
   DragValues,
 } from './types';
+import {arePositionsEqual} from './utils';
 
 const _getCurrentPosition = (id: string, order: SortOrder) => {
   const rootIndex = order.findIndex(
@@ -132,6 +133,12 @@ function DraggableContainer({
   const [position, setPosition] = useState<Position>(() => {
     return _getCurrentPosition(id, pendingSortOrder.value);
   });
+  const setPositionWithCompare = (newPos) => setPosition(prev => {
+    if (prev && arePositionsEqual(prev, newPos)) {
+      return prev;
+    }
+    return newPos;
+  });
   useDerivedValue(() => {
     const pos = {
       rootIndex: pendingSortOrder.value.findIndex(
@@ -140,7 +147,7 @@ function DraggableContainer({
     };
 
     if (pos) {
-      runOnJS(setPosition)(pos);
+      runOnJS(setPositionWithCompare)(pos);
     }
   });
 

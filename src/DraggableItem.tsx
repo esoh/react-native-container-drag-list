@@ -21,6 +21,7 @@ import {
   DragState,
   DragValues,
 } from './types';
+import {arePositionsEqual} from './utils';
 
 const _getCurrentPosition = (id: string, order: SortOrder) => {
   'worklet';
@@ -181,10 +182,16 @@ function DraggableItem({
   const [position, setPosition] = useState<Position>(
     _getCurrentPosition(id, pendingSortOrder.value),
   );
+  const setPositionWithCompare = (newPos) => setPosition(prev => {
+    if (prev && arePositionsEqual(prev, newPos)) {
+      return prev;
+    }
+    return newPos;
+  });
   useDerivedValue(() => {
     const pos = _getCurrentPosition(id, pendingSortOrder.value);
     if (pos) {
-      runOnJS(setPosition)(pos);
+      runOnJS(setPositionWithCompare)(pos);
     }
   }, []);
 
